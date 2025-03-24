@@ -35,25 +35,28 @@ def extract_images_from_pdf(pdf_file_path: str, output_path: str):
                     continue
 
                 seen_images.add(image_hash)
-                ext = ".png"
-
-                # Convert JP2 to PNG if necessary
-                try:
-                    with Image.open(io.BytesIO(image_data)) as img:
-                        if img.mode == "RGBA":
-                            img = img.convert("RGB")
-                        image_data = io.BytesIO()
-                        img.save(image_data, format="PNG")
-                        image_data = image_data.getvalue()
-                except Exception as e:
-                    logging.error(f"Failed to process image: {e}")
-                    continue
+                ext = os.path.splitext(image.name)[1].lower()
+                
+                if ext == ".jpeg":
+                    ext = ".jpg"
+                elif ext == ".jp2":
+                    try:
+                        with Image.open(io.BytesIO(image_data)) as img:
+                            if img.mode == "RGBA":
+                                img = img.convert("RGB")
+                            ext = ".png"
+                            image_data = io.BytesIO()
+                            img.save(image_data, format="PNG")
+                            image_data = image_data.getvalue()
+                    except Exception as e:
+                        logging.error(f"Failed to convert JP2 to PNG: {e}")
+                        continue
 
                 # Naming logic
                 if image_count == 0:
-                    image_filename = f"user-img-{str(uuid4())[:18]}.png"
+                    image_filename = f"user-img-{str(uuid4())[:18]}.{ext}"
                 elif image_count == 1:
-                    image_filename = f"sign-img-{str(uuid4())[:18]}.png"
+                    image_filename = f"sign-img-{str(uuid4())[:18]}.{ext}"
                 else:
                     image_filename = f"{uuid4()}{ext.lower()}"
 
